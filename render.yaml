@@ -1,0 +1,25 @@
+# Render Blueprint para el frontend estatico.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Para usarlo: subir esta carpeta a un repo de GitHub y en Render:
+#   New + -> Blueprint -> apuntar al repo.
+# Render detecta este archivo y crea el Static Site automaticamente.
+
+services:
+  - type: web
+    name: motos-frontend
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

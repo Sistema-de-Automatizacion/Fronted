@@ -1,0 +1,18 @@
+/* Solo tweaks encima de Tailwind CDN. */
+
+table td {
+  vertical-align: top;
+}
+
+/* Scrollbars discretos */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+code {
+  font-family: "Consolas", "Menlo", "Monaco", monospace;
+}
