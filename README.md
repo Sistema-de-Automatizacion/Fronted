@@ -1,15 +1,17 @@
 # Motos del Caribe · Panel de notificaciones (frontend)
 
-Página web estática que consume el backend de notificaciones para **visualizar los mensajes de cobro** generados por el servicio y las notificaciones registradas por contrato.
+Página web estática que consume el backend de notificaciones para **visualizar los mensajes de cobro** generados por el servicio y auditar el historial de notificaciones enviadas y fallidas.
+
+**URL en producción:** https://fronted-2rrf.onrender.com
 
 Stack: HTML + Tailwind CSS (CDN) + JavaScript vanilla. **Sin build, sin bundler, sin dependencias de runtime.**
 
 ## Estructura
 
 ```
-Backend-frontend/
-├── index.html       # layout de la página
-├── app.js           # lógica (fetch, render, localStorage)
+.
+├── index.html       # layout con header, modal de login y secciones
+├── app.js           # lógica: fetch, render, localStorage, auth
 ├── styles.css       # tweaks menores sobre Tailwind
 ├── render.yaml      # blueprint para Render Static Site
 ├── .gitignore
@@ -18,127 +20,103 @@ Backend-frontend/
 
 ## Funcionalidades
 
-1. **Configuración del backend** — input para definir la URL del backend (`http://localhost:8080` por defecto). Se guarda en `localStorage` y hay un botón para probar `/actuator/health`.
-2. **Contratos próximos a pagar** — llama `GET /contracts/next-to-pay` y muestra una tabla con:
-   - Contrato, cliente, teléfono, día de pago
-   - Cuota, abono recibido, saldo pendiente
-   - **Caso del mensaje** (C · Sin abono / D · Abono parcial), según el árbol de decisión del backend
-   - El texto del mensaje que el backend generó y que n8n enviará por WhatsApp
-3. **Historial de notificaciones por contrato** — llama `GET /get/notifications?id=`, con validación cliente de que sólo se acepten dígitos.
+1. **Pantalla de login** — modal que pide la **API Key** al primer acceso. La key se guarda en `localStorage` y se envía como header `X-API-Key` en cada llamada al backend. Si el backend responde `401`, la key se borra automáticamente y vuelve a aparecer el modal. Hay un botón **🔒 Cerrar sesión** en el header.
+2. **Indicador de estado del backend** — punto de color en el header (🟡 conectando / 🟢 OK / 🔴 error) con el host del backend.
+3. **Contratos próximos a pagar** — llama `GET /contracts/next-to-pay` y muestra:
+   - Contrato, cliente, teléfono, día de pago, cuota, abono recibido, saldo pendiente.
+   - **Caso del mensaje** (C · Sin abono / D · Abono parcial), según el árbol de decisión del backend.
+   - El texto del mensaje que el backend armó y que n8n enviará por WhatsApp.
+4. **Historial completo** (paginado) con dos tabs:
+   - ✉️ **Enviadas** — `GET /notifications/all?page=&size=` con paginación visual (← → + selector 10/20/50/100).
+   - ⚠️ **Errores** — `GET /notifications/errors/all?page=&size=` con columna extra del `errorMessage`.
+5. **Historial por contrato** — busca notificaciones por `numContract` usando `GET /get/notifications?id=` con validación cliente de dígitos.
+6. **Configuración avanzada** (colapsada por defecto) — para apuntar a un backend distinto sin tocar código, con botón *↺ Restablecer* que vuelve a la URL de producción.
 
 ## Ejecución local
 
-### Opción A — Abrir el archivo directamente
-
-Doble clic en `index.html`. Funciona para probar la UI, pero el browser bloqueará las llamadas al backend por `file://` → `http://` (CORS + mixed-origin). Solo útil para ver el layout.
-
-### Opción B — Servidor estático simple
+### 1) Servir los archivos estáticos
 
 ```bash
-# Python 3 (ya instalado en Windows via python.org)
+# Python 3
 cd C:\Users\LeNoVo\Backend-frontend
 python -m http.server 5500
 ```
 
-Luego abrir http://localhost:5500.
+Abrir http://localhost:5500.
 
-```bash
-# Node.js (si lo tienes)
-npx serve -l 5500 .
-```
+### 2) Backend local
 
-### Paso crítico — habilitar CORS en el backend
+Necesitas el backend corriendo en `http://localhost:8080` con:
 
-Por defecto, el backend rechaza las llamadas del frontend porque son de otro origen (`http://localhost:5500` → `http://localhost:8080`). Hay dos opciones:
+- La variable `app.cors.allowed-origins=http://localhost:5500` configurada (ver [README del backend](https://github.com/Sistema-de-Automatizacion/Backend)).
+- La variable `app.api-key=<token-local>` con una key de pruebas.
 
-**Opción 1: agregar un `@Configuration` de CORS en el backend** (recomendada, 10 líneas)
+### 3) Primera visita local
 
-Crear `src/main/java/com/automatization/comunications/config/CorsConfig.java`:
-
-```java
-package com.automatization.comunications.config;
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-@Configuration
-public class CorsConfig implements WebMvcConfigurer {
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins(
-                    "http://localhost:5500",
-                    "https://<tu-frontend>.onrender.com"
-                )
-                .allowedMethods("GET", "POST", "OPTIONS")
-                .allowedHeaders("*");
-    }
-}
-```
-
-Después recompilar y reiniciar el backend.
-
-**Opción 2: extensión del browser** — "CORS Unblock" o similar. Solo para desarrollo. **No usar en producción.**
+1. Abre http://localhost:5500.
+2. Aparece el modal de login → pega la misma `app.api-key` que configuraste en el backend.
+3. Si quieres apuntar a un backend distinto del Azure de producción, expande **⚙️ Configuración avanzada del backend** y pon la URL local.
 
 ## Despliegue en Render (Static Site)
 
-### Prerrequisitos
+El frontend se despliega automáticamente cuando hay un push a `main`. El servicio está conectado a este repo y configurado como *Static Site* con:
 
-1. Crear un repositorio en GitHub con esta carpeta (puede ser nuevo, p. ej. `motos-frontend`). Ver "Subir a GitHub" abajo.
-2. Tener cuenta en https://render.com (gratis con GitHub OAuth).
-3. **Haber desplegado el backend primero** y tener su URL pública (ej. `https://motos-backend.onrender.com` o la URL del Azure App Service).
-4. **Haber habilitado CORS** en el backend con el origen del frontend de Render (`https://<tu-frontend>.onrender.com`).
+- **Build Command:** vacío
+- **Publish Directory:** `.`
+- **Branch:** `main`
 
-### Subir a GitHub
+Si necesitas recrear el servicio, en https://dashboard.render.com → **New +** → **Static Site** → conectar este repo con esos parámetros, o usar el `render.yaml` incluido como Blueprint.
 
-```bash
-cd C:\Users\LeNoVo\Backend-frontend
-git init
-git add .
-git commit -m "chore: frontend inicial para visualizar notificaciones"
-git branch -M main
-# Crear el repo en github.com primero, luego:
-git remote add origin https://github.com/<tu-usuario>/motos-frontend.git
-git push -u origin main
-```
+## Configuración y secretos
 
-### Deploy en Render
+| Valor                                             | Dónde vive                          | Notas                                                                 |
+|---------------------------------------------------|-------------------------------------|-----------------------------------------------------------------------|
+| URL del backend                                   | Constante `DEFAULT_URL` en `app.js` | Hardcoded al Azure App Service; editable en UI via "Config avanzada"  |
+| API Key (`X-API-Key`)                             | `localStorage["motos:apiKey"]`      | Se pide al usuario en el modal de login                               |
+| Override de URL (opcional)                        | `localStorage["motos:backendUrl"]`  | Solo si el usuario la cambia desde Config avanzada                    |
 
-1. Entrar a https://dashboard.render.com.
-2. **New +** → **Static Site**.
-3. Conectar el repo de GitHub.
-4. Configurar:
-   - **Name:** `motos-frontend` (o el que quieras).
-   - **Branch:** `main`.
-   - **Build Command:** (vacío)
-   - **Publish Directory:** `.`
-5. **Create Static Site**.
-6. Render asigna una URL `https://motos-frontend.onrender.com` en ~30 segundos.
+**Nada se commitea al repo.** Todos los secretos viven solo en el navegador de cada usuario.
 
-### Primera visita al sitio publicado
+## Autenticación
 
-1. Abrir `https://motos-frontend.onrender.com`.
-2. En la sección "Configuración del backend", cambiar la URL al endpoint público del backend (ej. `https://motos-backend.onrender.com`).
-3. Clic en **Guardar**.
-4. Clic en **Probar /actuator/health** — debe responder `UP`.
-5. Clic en **Actualizar** en la sección de contratos.
+El backend exige `X-API-Key` en **todas** las peticiones excepto `/actuator/health`, `/actuator/info` y los preflight CORS `OPTIONS`. El frontend:
 
-Si ves un error tipo `Failed to fetch` o `CORS policy`, confirma:
-- Que el backend esté corriendo (no en sleep si está en el plan free de Render).
-- Que el backend permita explícitamente el origen del frontend en su configuración de CORS.
-- Que la URL del backend esté con `https://` (no `http://`).
+- Almacena la key en `localStorage` (clave `motos:apiKey`).
+- La inyecta en cada `fetch` a través de la función centralizada `apiFetch()`.
+- Intercepta cualquier `401` global y fuerza un nuevo login.
+- No valida la key del lado cliente — confía en el backend para rechazarla si no es válida.
 
-## Variables y configuración
+Si el backend está en sleep (plan free de Render/Azure) y responde lento, verás el indicador amarillo "Verificando backend..." durante unos segundos.
 
-La URL del backend **no está hardcodeada en el código**. Se edita desde la UI y se persiste en `localStorage`. Esto permite:
-- Tener una sola build del frontend para dev, staging y prod.
-- Cambiar de backend sin redesplegar.
+## Endpoints consumidos
 
-Si prefieres fijarla por entorno, modifica la constante `DEFAULT_URL` en `app.js`.
+| Método | Endpoint                                    | Usado por                      |
+|--------|---------------------------------------------|--------------------------------|
+| GET    | `/actuator/health`                          | Indicador del header (público) |
+| GET    | `/contracts/next-to-pay`                    | Sección "Contratos próximos"   |
+| GET    | `/notifications/all?page=&size=`            | Tab "Enviadas"                 |
+| GET    | `/notifications/errors/all?page=&size=`     | Tab "Errores"                  |
+| GET    | `/get/notifications?id=`                    | Búsqueda por contrato          |
 
-## Notas
+## Troubleshooting
 
-- **Sin autenticación:** el frontend llama los endpoints públicos del backend. Si más adelante se agrega API key al backend (riesgo #2 del architecture.md), habrá que agregar un input para la key y enviarla como header `X-API-Key` en los `fetch`.
-- **Sin paginación:** el endpoint `/contracts/next-to-pay` devuelve todos los contratos de una vez. Si el volumen crece, habrá que agregar `?page=&size=` en backend y paginador visual aquí.
-- **El historial global no existe hoy:** `GET /get/notifications` sólo soporta filtrar por un `id` específico. Si quieres ver *todos* los mensajes enviados, hay que agregar un endpoint `GET /notifications/all` al backend y una nueva sección a este frontend.
+**"API key inválida o expirada" al ingresar una key nueva.**
+La key que pegaste no coincide con la configurada en el backend (`app.api-key`). Confirma con el admin; cuida los espacios al copiar.
+
+**El header muestra punto rojo "Backend no disponible".**
+- El Azure App Service puede estar detenido: portal → App Service → **Start**.
+- O el dominio del frontend no está en `app.cors.allowed-origins` del backend.
+- Para casos de emergencia, expande "Config avanzada" y apunta a un backend alternativo.
+
+**El dashboard carga pero los datos vienen vacíos.**
+- No hay contratos/notificaciones en MySQL. Verifica que las vistas `vw_sv_all_motos_semanal` y `vw_gd_recaudo_bruto` existen y están pobladas.
+- O la paginación está en una página sin datos. Vuelve a la página 1.
+
+**"Failed to fetch" en el console.**
+- El backend rechazó el preflight CORS. Confirma que el origen del frontend de Render (`https://fronted-2rrf.onrender.com`) está en `app.cors.allowed-origins` en Azure.
+- O el navegador bloqueó contenido mixto (https → http). La URL del backend **debe** ser `https`.
+
+## Relacionado
+
+- Backend: https://github.com/Sistema-de-Automatizacion/Backend
+- Workflow de n8n: consume los mismos endpoints con la misma `X-API-Key`. Cualquier cambio en la auth del backend requiere actualizar la credencial Header Auth en n8n también.
