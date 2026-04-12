@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "motos:backendUrl";
+const API_KEY_STORAGE = "motos:apiKey";
 const DEFAULT_URL = "https://motos-del-caribe-exfsh8ekghg9bba5.mexicocentral-01.azurewebsites.net";
 
 const els = {
@@ -27,6 +28,11 @@ const els = {
   historyPrev: document.getElementById("historyPrev"),
   historyNext: document.getElementById("historyNext"),
   historyPageInfo: document.getElementById("historyPageInfo"),
+  loginOverlay: document.getElementById("loginOverlay"),
+  loginForm: document.getElementById("loginForm"),
+  apiKeyInput: document.getElementById("apiKeyInput"),
+  loginError: document.getElementById("loginError"),
+  logoutBtn: document.getElementById("logoutBtn"),
 };
 
 const historyState = {
@@ -49,6 +55,55 @@ function getBackendUrl() {
 
 function setBackendUrl(url) {
   localStorage.setItem(STORAGE_KEY, url);
+}
+
+function getApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || "";
+}
+
+function setApiKey(key) {
+  localStorage.setItem(API_KEY_STORAGE, key);
+}
+
+function clearApiKey() {
+  localStorage.removeItem(API_KEY_STORAGE);
+}
+
+function showLogin(errorMessage) {
+  els.loginOverlay.classList.remove("hidden");
+  els.loginOverlay.classList.add("flex");
+  els.logoutBtn.classList.add("hidden");
+  els.apiKeyInput.value = "";
+  if (errorMessage) {
+    els.loginError.textContent = errorMessage;
+    els.loginError.classList.remove("hidden");
+  } else {
+    els.loginError.classList.add("hidden");
+  }
+  setTimeout(() => els.apiKeyInput.focus(), 50);
+}
+
+function hideLogin() {
+  els.loginOverlay.classList.add("hidden");
+  els.loginOverlay.classList.remove("flex");
+  els.logoutBtn.classList.remove("hidden");
+}
+
+async function apiFetch(path, options = {}) {
+  const base = getBackendUrl();
+  const key = getApiKey();
+  const headers = new Headers(options.headers || {});
+  if (key) headers.set("X-API-Key", key);
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  const res = await fetch(`${base}${path}`, { ...options, headers });
+  if (res.status === 401) {
+    clearApiKey();
+    showLogin("API key inválida o expirada. Ingresa una nueva.");
+    throw new Error("Unauthorized");
+  }
+  return res;
 }
 
 function sanitizeUrl(raw) {
@@ -148,7 +203,42 @@ function init() {
     }
   });
 
+  // Login form
+  els.loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const key = els.apiKeyInput.value.trim();
+    if (!key) return;
+    setApiKey(key);
+    hideLogin();
+    checkHealth();
+    fetchContracts();
+    fetchHistory();
+  });
+
+  // Logout
+  els.logoutBtn.addEventListener("click", () => {
+    clearApiKey();
+    // Limpiar tablas
+    els.contractsBody.innerHTML = "";
+    els.historyBody.innerHTML = "";
+    els.notificationsBody.innerHTML = "";
+    els.contractsState.textContent = "Sesión cerrada.";
+    els.historyStateLabel.textContent = "";
+    els.historyPageInfo.textContent = "";
+    setHeaderStatus("loading", "Sin sesión");
+    showLogin();
+  });
+
   updateTabUI();
+
+  // Si no hay API key, pedirla antes de cargar nada
+  if (!getApiKey()) {
+    showLogin();
+    setHeaderStatus("loading", "Ingresa la API key");
+    return;
+  }
+
+  els.logoutBtn.classList.remove("hidden");
 
   // Carga inicial automatica
   checkHealth();
@@ -198,17 +288,19 @@ function hostOf(url) {
 }
 
 async function fetchContracts() {
-  const url = `${getBackendUrl()}/contracts/next-to-pay`;
+  if (!getApiKey()) return;
   els.contractsState.textContent = "Cargando...";
   els.contractsBody.innerHTML = "";
   try {
-    const res = await fetch(url);
+    const res = await apiFetch("/contracts/next-to-pay");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderContracts(Array.isArray(data) ? data : []);
     els.contractsState.textContent = `${data.length} contrato(s) · Actualizado ${new Date().toLocaleTimeString()}`;
   } catch (err) {
-    els.contractsState.textContent = `Error al cargar contratos: ${err.message}`;
+    if (err.message !== "Unauthorized") {
+      els.contractsState.textContent = `Error al cargar contratos: ${err.message}`;
+    }
   }
 }
 
@@ -248,14 +340,15 @@ function renderContracts(contracts) {
 }
 
 async function fetchHistory() {
+  if (!getApiKey()) return;
   const endpoint = historyState.tab === "errors" ? "/notifications/errors/all" : "/notifications/all";
-  const url = `${getBackendUrl()}${endpoint}?page=${historyState.page}&size=${historyState.size}`;
+  const path = `${endpoint}?page=${historyState.page}&size=${historyState.size}`;
   els.historyStateLabel.textContent = "Cargando...";
   els.historyBody.innerHTML = "";
   els.historyPrev.disabled = true;
   els.historyNext.disabled = true;
   try {
-    const res = await fetch(url);
+    const res = await apiFetch(path);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     historyState.totalPages = data.totalPages || 0;
@@ -268,8 +361,10 @@ async function fetchHistory() {
     els.historyPrev.disabled = historyState.page === 0;
     els.historyNext.disabled = historyState.page + 1 >= historyState.totalPages;
   } catch (err) {
-    els.historyStateLabel.textContent = `Error al cargar historial: ${err.message}`;
-    els.historyPageInfo.textContent = "";
+    if (err.message !== "Unauthorized") {
+      els.historyStateLabel.textContent = `Error al cargar historial: ${err.message}`;
+      els.historyPageInfo.textContent = "";
+    }
   }
 }
 
@@ -297,11 +392,11 @@ function renderHistory(rows) {
 }
 
 async function fetchNotifications(id) {
-  const url = `${getBackendUrl()}/get/notifications?id=${encodeURIComponent(id)}`;
+  if (!getApiKey()) return;
   els.notificationsState.textContent = "Cargando...";
   els.notificationsBody.innerHTML = "";
   try {
-    const res = await fetch(url);
+    const res = await apiFetch(`/get/notifications?id=${encodeURIComponent(id)}`);
     if (!res.ok) {
       if (res.status === 400) throw new Error("ID inválido (solo dígitos)");
       throw new Error(`HTTP ${res.status}`);
@@ -310,7 +405,9 @@ async function fetchNotifications(id) {
     renderNotifications(Array.isArray(data) ? data : []);
     els.notificationsState.textContent = `${data.length} notificación(es) para el contrato ${id}`;
   } catch (err) {
-    els.notificationsState.textContent = `Error: ${err.message}`;
+    if (err.message !== "Unauthorized") {
+      els.notificationsState.textContent = `Error: ${err.message}`;
+    }
   }
 }
 

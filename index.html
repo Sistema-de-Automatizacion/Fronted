@@ -18,12 +18,58 @@
           Consulta de mensajes de cobro generados por el backend y enviados vía n8n.
         </p>
       </div>
-      <div id="headerStatus" class="text-xs text-emerald-100 flex items-center gap-2">
-        <span id="headerDot" class="w-2 h-2 rounded-full bg-amber-300"></span>
-        <span id="headerText">Conectando...</span>
+      <div class="flex items-center gap-4 flex-wrap">
+        <div id="headerStatus" class="text-xs text-emerald-100 flex items-center gap-2">
+          <span id="headerDot" class="w-2 h-2 rounded-full bg-amber-300"></span>
+          <span id="headerText">Conectando...</span>
+        </div>
+        <button
+          id="logoutBtn"
+          class="hidden text-xs bg-emerald-600 hover:bg-emerald-500 border border-emerald-400 px-3 py-1 rounded transition"
+          title="Borrar la API key de este navegador"
+        >
+          🔒 Cerrar sesión
+        </button>
       </div>
     </div>
   </header>
+
+  <!-- Modal de login (API key) -->
+  <div id="loginOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="text-2xl">🔐</span>
+        <h2 class="text-xl font-bold">Acceso restringido</h2>
+      </div>
+      <p class="text-sm text-gray-600 mb-4">
+        Este panel requiere una <strong>API Key</strong> para consultar el backend.
+        Pídesela al administrador del sistema.
+      </p>
+      <form id="loginForm" class="space-y-3">
+        <div>
+          <label for="apiKeyInput" class="block text-sm font-semibold mb-1">API Key</label>
+          <input
+            id="apiKeyInput"
+            type="password"
+            autocomplete="off"
+            required
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            placeholder="Pega tu API key aquí"
+          />
+        </div>
+        <p id="loginError" class="text-sm text-red-600 hidden"></p>
+        <button
+          type="submit"
+          class="w-full bg-emerald-600 text-white py-2 rounded font-semibold hover:bg-emerald-700 transition"
+        >
+          Ingresar
+        </button>
+      </form>
+      <p class="text-xs text-gray-400 mt-4 text-center">
+        La clave se guarda solo en tu navegador.
+      </p>
+    </div>
+  </div>
 
   <main class="max-w-6xl mx-auto px-6 py-8 space-y-8 flex-1 w-full">
 
