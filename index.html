@@ -11,41 +11,63 @@
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
   <header class="bg-emerald-700 text-white shadow">
-    <div class="max-w-6xl mx-auto px-6 py-5">
-      <h1 class="text-2xl font-bold">Motos del Caribe · Panel de notificaciones</h1>
-      <p class="text-emerald-100 text-sm mt-1">
-        Consulta de mensajes de cobro generados por el backend y enviados vía n8n.
-      </p>
+    <div class="max-w-6xl mx-auto px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-bold">Motos del Caribe · Panel de notificaciones</h1>
+        <p class="text-emerald-100 text-sm mt-1">
+          Consulta de mensajes de cobro generados por el backend y enviados vía n8n.
+        </p>
+      </div>
+      <div id="headerStatus" class="text-xs text-emerald-100 flex items-center gap-2">
+        <span id="headerDot" class="w-2 h-2 rounded-full bg-amber-300"></span>
+        <span id="headerText">Conectando...</span>
+      </div>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-6 py-8 space-y-8 flex-1 w-full">
 
-    <!-- Backend config -->
-    <section class="bg-white shadow rounded-lg p-5">
-      <h2 class="font-semibold mb-3">Configuración del backend</h2>
-      <div class="flex flex-col sm:flex-row gap-2">
-        <input
-          id="backendUrl"
-          type="text"
-          class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          placeholder="http://localhost:8080"
-        />
-        <button
-          id="saveBackend"
-          class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
-        >
-          Guardar
-        </button>
-        <button
-          id="checkHealth"
-          class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition"
-        >
-          Probar /actuator/health
-        </button>
+    <!-- Backend config (colapsado por defecto) -->
+    <details class="bg-white shadow rounded-lg p-5 group">
+      <summary class="font-semibold cursor-pointer list-none flex items-center justify-between">
+        <span>⚙️ Configuración avanzada del backend</span>
+        <span class="text-xs text-gray-400 group-open:hidden">(clic para expandir)</span>
+      </summary>
+      <div class="mt-4 space-y-3">
+        <p class="text-sm text-gray-500">
+          Usa esta sección solo si necesitas apuntar a un backend distinto del de producción.
+          La URL se guarda en tu navegador.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input
+            id="backendUrl"
+            type="text"
+            class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            placeholder="https://mi-backend.azurewebsites.net"
+          />
+          <button
+            id="saveBackend"
+            class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+          >
+            Guardar
+          </button>
+          <button
+            id="resetBackend"
+            class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition"
+            title="Volver a la URL de producción"
+          >
+            ↺ Restablecer
+          </button>
+          <button
+            id="checkHealth"
+            class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition"
+          >
+            Probar /actuator/health
+          </button>
+        </div>
+        <p id="backendStatus" class="text-sm text-gray-500"></p>
       </div>
-      <p id="backendStatus" class="text-sm text-gray-500 mt-2"></p>
-    </section>
+    </details>
 
     <!-- Contratos próximos a pagar -->
     <section class="bg-white shadow rounded-lg p-5">

@@ -1,13 +1,16 @@
 "use strict";
 
 const STORAGE_KEY = "motos:backendUrl";
-const DEFAULT_URL = "http://localhost:8080";
+const DEFAULT_URL = "https://motos-del-caribe-exfsh8ekghg9bba5.mexicocentral-01.azurewebsites.net";
 
 const els = {
   backendUrl: document.getElementById("backendUrl"),
   saveBackend: document.getElementById("saveBackend"),
+  resetBackend: document.getElementById("resetBackend"),
   checkHealth: document.getElementById("checkHealth"),
   backendStatus: document.getElementById("backendStatus"),
+  headerDot: document.getElementById("headerDot"),
+  headerText: document.getElementById("headerText"),
   refreshContracts: document.getElementById("refreshContracts"),
   contractsState: document.getElementById("contractsState"),
   contractsBody: document.getElementById("contractsBody"),
@@ -61,6 +64,16 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function setHeaderStatus(state, text) {
+  const colors = {
+    ok: "bg-emerald-300",
+    loading: "bg-amber-300",
+    error: "bg-red-400",
+  };
+  els.headerDot.className = `w-2 h-2 rounded-full ${colors[state] || colors.loading}`;
+  els.headerText.textContent = text;
+}
+
 function init() {
   const saved = getBackendUrl();
   els.backendUrl.value = saved;
@@ -75,6 +88,18 @@ function init() {
     setBackendUrl(url);
     els.backendUrl.value = url;
     els.backendStatus.textContent = `Backend activo: ${url}`;
+    checkHealth();
+    fetchContracts();
+    fetchHistory();
+  });
+
+  els.resetBackend.addEventListener("click", () => {
+    localStorage.removeItem(STORAGE_KEY);
+    els.backendUrl.value = DEFAULT_URL;
+    els.backendStatus.textContent = `Backend activo: ${DEFAULT_URL} (por defecto)`;
+    checkHealth();
+    fetchContracts();
+    fetchHistory();
   });
 
   els.checkHealth.addEventListener("click", checkHealth);
@@ -124,6 +149,10 @@ function init() {
   });
 
   updateTabUI();
+
+  // Carga inicial automatica
+  checkHealth();
+  fetchContracts();
   fetchHistory();
 }
 
@@ -143,15 +172,28 @@ function updateTabUI() {
 }
 
 async function checkHealth() {
-  const url = `${getBackendUrl()}/actuator/health`;
+  const base = getBackendUrl();
+  const url = `${base}/actuator/health`;
   els.backendStatus.textContent = `Consultando ${url}...`;
+  setHeaderStatus("loading", "Verificando backend...");
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    const ok = (data.status || "").toUpperCase() === "UP";
     els.backendStatus.textContent = `Health: ${data.status || "unknown"} (${url})`;
+    setHeaderStatus(ok ? "ok" : "error", ok ? `Backend OK · ${hostOf(base)}` : `Backend ${data.status}`);
   } catch (err) {
     els.backendStatus.textContent = `Error: ${err.message}. Revisa CORS o que el backend esté arriba.`;
+    setHeaderStatus("error", "Backend no disponible");
+  }
+}
+
+function hostOf(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
   }
 }
 
