@@ -4,28 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Motos del Caribe · Panel de notificaciones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%8D%EF%B8%8F%3C/text%3E%3C/svg%3E" />
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-  <header class="bg-emerald-700 text-white shadow">
+  <header class="bg-slate-900 text-white shadow">
     <div class="max-w-6xl mx-auto px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
       <div>
         <h1 class="text-2xl font-bold">Motos del Caribe · Panel de notificaciones</h1>
-        <p class="text-emerald-100 text-sm mt-1">
+        <p class="text-slate-300 text-sm mt-1">
           Consulta de mensajes de cobro generados por el backend y enviados vía n8n.
         </p>
       </div>
       <div class="flex items-center gap-4 flex-wrap">
-        <div id="headerStatus" class="text-xs text-emerald-100 flex items-center gap-2">
+        <div id="headerStatus" class="text-xs text-slate-300 flex items-center gap-2">
           <span id="headerDot" class="w-2 h-2 rounded-full bg-amber-300"></span>
           <span id="headerText">Conectando...</span>
         </div>
         <button
           id="logoutBtn"
-          class="hidden text-xs bg-emerald-600 hover:bg-emerald-500 border border-emerald-400 px-3 py-1 rounded transition"
+          class="hidden text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1 rounded transition"
           title="Borrar la API key de este navegador"
         >
           🔒 Cerrar sesión
@@ -53,14 +67,14 @@
             type="password"
             autocomplete="off"
             required
-            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             placeholder="Pega tu API key aquí"
           />
         </div>
         <p id="loginError" class="text-sm text-red-600 hidden"></p>
         <button
           type="submit"
-          class="w-full bg-emerald-600 text-white py-2 rounded font-semibold hover:bg-emerald-700 transition"
+          class="w-full bg-sky-700 text-white py-2 rounded font-semibold hover:bg-sky-800 transition"
         >
           Ingresar
         </button>
@@ -72,6 +86,42 @@
   </div>
 
   <main class="max-w-6xl mx-auto px-6 py-8 space-y-8 flex-1 w-full">
+
+    <!-- KPIs -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-lg shadow p-5 flex items-start gap-3">
+        <div class="w-11 h-11 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xl shrink-0">📋</div>
+        <div class="min-w-0">
+          <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Notificaciones a enviar</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1 truncate" id="kpiTotal">—</p>
+          <p class="text-xs text-slate-400 mt-1 truncate" id="kpiTotalSub">Esperando datos…</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-5 flex items-start gap-3">
+        <div class="w-11 h-11 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xl shrink-0">⚠️</div>
+        <div class="min-w-0">
+          <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Mora arrastrada</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1 truncate" id="kpiMora">—</p>
+          <p class="text-xs text-slate-400 mt-1 truncate" id="kpiMoraSub">—</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-5 flex items-start gap-3">
+        <div class="w-11 h-11 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xl shrink-0">💰</div>
+        <div class="min-w-0">
+          <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Cartera pendiente</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1 truncate" id="kpiCartera">—</p>
+          <p class="text-xs text-slate-400 mt-1 truncate" id="kpiCarteraSub">—</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-5 flex items-start gap-3">
+        <div class="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0">🏍️</div>
+        <div class="min-w-0">
+          <p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">Recaudo semana en curso</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1 truncate" id="kpiPaid">—</p>
+          <p class="text-xs text-slate-400 mt-1 truncate" id="kpiPaidSub">—</p>
+        </div>
+      </div>
+    </section>
 
     <!-- Backend config (colapsado por defecto) -->
     <details class="bg-white shadow rounded-lg p-5 group">
@@ -88,12 +138,12 @@
           <input
             id="backendUrl"
             type="text"
-            class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
             placeholder="https://mi-backend.azurewebsites.net"
           />
           <button
             id="saveBackend"
-            class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+            class="bg-sky-700 text-white px-4 py-2 rounded hover:bg-sky-800 transition"
           >
             Guardar
           </button>
@@ -127,7 +177,7 @@
         </div>
         <button
           id="refreshContracts"
-          class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+          class="bg-sky-700 text-white px-4 py-2 rounded hover:bg-sky-800 transition"
         >
           ↻ Actualizar
         </button>
@@ -142,6 +192,22 @@
           <span class="w-3 h-3 rounded-full bg-blue-400"></span>
           Recordatorio · Sin abono de la semana
         </span>
+      </div>
+
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <span class="text-xs text-slate-500 mr-1 uppercase tracking-wide">Filtrar</span>
+        <button type="button" data-filter="all"
+          class="contracts-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition">
+          Todos <span class="filter-count opacity-70 ml-1">0</span>
+        </button>
+        <button type="button" data-filter="mora"
+          class="contracts-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+          🔴 Mora <span class="filter-count opacity-70 ml-1">0</span>
+        </button>
+        <button type="button" data-filter="reminder"
+          class="contracts-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+          🔵 Recordatorio <span class="filter-count opacity-70 ml-1">0</span>
+        </button>
       </div>
 
       <div id="contractsState" class="text-sm text-gray-500 mb-3">
@@ -167,19 +233,21 @@
       </div>
     </section>
 
-    <!-- Pagos registrados hoy -->
+    <!-- Pagos registrados esta semana -->
     <section class="bg-white shadow rounded-lg p-5">
       <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div>
-          <h2 class="text-xl font-semibold">Pagos registrados hoy</h2>
+          <h2 class="text-xl font-semibold">Pagos registrados esta semana</h2>
           <p class="text-sm text-gray-500">
-            Resultado de <code class="text-xs bg-gray-100 px-1 rounded">GET /contracts/paid-today</code>.
-            Clientes cuyo pago llegó hoy, con el mensaje de confirmación (<em>pago_recibido</em>).
+            Resultado de <code class="text-xs bg-gray-100 px-1 rounded">GET /contracts/paid-this-week</code>.
+            Pagos entre el lunes y el domingo de la semana en curso (fecha real del pago). Como los pagos ingresan a la BD
+            con 1 día de retraso, los del día actual aparecen al día siguiente. El mensaje <em>pago_recibido</em> viene
+            listo para n8n.
           </p>
         </div>
         <button
           id="refreshPaidToday"
-          class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+          class="bg-sky-700 text-white px-4 py-2 rounded hover:bg-sky-800 transition"
         >
           ↻ Actualizar
         </button>
@@ -192,6 +260,7 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-gray-100 text-xs uppercase text-gray-600">
             <tr>
+              <th class="px-3 py-2">Fecha pago</th>
               <th class="px-3 py-2">Contrato</th>
               <th class="px-3 py-2">Cliente</th>
               <th class="px-3 py-2">Teléfono</th>
@@ -219,7 +288,7 @@
         </div>
         <button
           id="refreshHistory"
-          class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+          class="bg-sky-700 text-white px-4 py-2 rounded hover:bg-sky-800 transition"
         >
           ↻ Actualizar
         </button>
@@ -228,7 +297,7 @@
       <div class="flex items-center gap-1 border-b mb-4">
         <button
           data-tab="sent"
-          class="history-tab px-4 py-2 text-sm font-semibold border-b-2 border-emerald-600 text-emerald-700"
+          class="history-tab px-4 py-2 text-sm font-semibold border-b-2 border-sky-700 text-sky-800"
         >
           ✉️ Enviadas
         </button>
@@ -242,7 +311,7 @@
           <label for="historyPageSize" class="text-gray-500">Por página:</label>
           <select
             id="historyPageSize"
-            class="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            class="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-600"
           >
             <option value="10">10</option>
             <option value="20" selected>20</option>
@@ -304,12 +373,12 @@
           type="text"
           inputmode="numeric"
           pattern="[0-9]*"
-          class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
           placeholder="Número de contrato (solo dígitos)"
         />
         <button
           id="searchNotifications"
-          class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+          class="bg-sky-700 text-white px-4 py-2 rounded hover:bg-sky-800 transition"
         >
           🔍 Buscar
         </button>

@@ -1,7 +1,19 @@
 /* Solo tweaks encima de Tailwind CDN. */
 
+:root {
+  --grid-gap: 8px;
+  --card-padding: 1rem;
+  --table-row-height: 40px;
+  --header-height: 56px;
+}
+
 table td {
   vertical-align: top;
+  line-height: 1.45;
+}
+
+table tbody tr {
+  transition: background-color 120ms ease;
 }
 
 /* Scrollbars discretos */
@@ -14,5 +26,6 @@ table td {
 }
 
 code {
-  font-family: "Consolas", "Menlo", "Monaco", monospace;
+  font-family: "IBM Plex Mono", "Consolas", "Menlo", "Monaco", monospace;
+  font-size: 0.85em;
 }
