@@ -324,14 +324,13 @@ function renderContracts(contracts) {
   els.contractsBody.innerHTML = contracts
     .map((c) => {
       const cuota = Number(c.paymentContract ?? 0);
-      const abono = c.paymentPayout == null ? null : Number(c.paymentPayout);
-      const saldo = abono == null ? cuota : cuota - abono;
-      const hasDebt = Number(c.debt ?? 0) > 0;
+      const moraArrastrada = Number(c.debt ?? 0);
+      const totalDue = Number(c.accumulatedDebt ?? 0);
+      const hasDebt = moraArrastrada > 0;
       const caseLabel = hasDebt ? "Mora · Cuota vencida" : "Recordatorio · Sin abono";
       const caseClass = hasDebt
         ? "bg-red-100 text-red-800 border border-red-200"
         : "bg-blue-100 text-blue-800 border border-blue-200";
-      const stateWeek = c.StateWeek ?? c.stateWeek ?? "";
       return `
         <tr class="border-b hover:bg-gray-50">
           <td class="px-3 py-2 font-mono text-xs">${escapeHtml(c.id)}</td>
@@ -339,9 +338,9 @@ function renderContracts(contracts) {
           <td class="px-3 py-2 font-mono text-xs">${escapeHtml(c.phoneNumber)}</td>
           <td class="px-3 py-2">${escapeHtml(c.paymentDay)}</td>
           <td class="px-3 py-2 text-right">${money.format(cuota)}</td>
-          <td class="px-3 py-2 text-right">${abono == null ? '<span class="text-gray-400">—</span>' : money.format(abono)}</td>
-          <td class="px-3 py-2 text-right font-semibold">${money.format(saldo)}</td>
-          <td class="px-3 py-2"><span class="inline-block px-2 py-1 rounded text-xs ${caseClass}">${caseLabel}</span><div class="text-xs text-gray-400 mt-1">${escapeHtml(stateWeek)}</div></td>
+          <td class="px-3 py-2 text-right">${moraArrastrada === 0 ? '<span class="text-gray-400">—</span>' : money.format(moraArrastrada)}</td>
+          <td class="px-3 py-2 text-right font-semibold">${money.format(totalDue)}</td>
+          <td class="px-3 py-2"><span class="inline-block px-2 py-1 rounded text-xs ${caseClass}">${caseLabel}</span></td>
           <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(c.message)}</td>
         </tr>
       `;
