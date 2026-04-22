@@ -23,14 +23,15 @@ Stack: HTML + Tailwind CSS (CDN) + JavaScript vanilla. **Sin build, sin bundler,
 1. **Pantalla de login** — modal que pide la **API Key** al primer acceso. La key se guarda en `localStorage` y se envía como header `X-API-Key` en cada llamada al backend. Si el backend responde `401`, la key se borra automáticamente y vuelve a aparecer el modal. Hay un botón **🔒 Cerrar sesión** en el header.
 2. **Indicador de estado del backend** — punto de color en el header (🟡 conectando / 🟢 OK / 🔴 error) con el host del backend.
 3. **Contratos próximos a pagar** — llama `GET /contracts/next-to-pay` y muestra:
-   - Contrato, cliente, teléfono, día de pago, cuota, abono recibido, saldo pendiente.
-   - **Caso del mensaje** (C · Sin abono / D · Abono parcial), según el árbol de decisión del backend.
-   - El texto del mensaje que el backend armó y que n8n enviará por WhatsApp.
-4. **Historial completo** (paginado) con dos tabs:
+   - Contrato, cliente, teléfono, día de pago, cuota semanal, **mora arrastrada** y **deuda total**.
+   - **Caso del mensaje** con badge de color: 🔴 *Mora · Cuota vencida* (deuda acumulada) / 🔵 *Recordatorio · Sin abono de la semana*.
+   - El texto del mensaje que el backend armó y que n8n enviará por WhatsApp (una de las 3 plantillas aprobadas por Meta: `notificacion_mora` o `recordatorio_cuota`).
+4. **Pagos registrados hoy** — llama `GET /contracts/paid-today` y lista los clientes con un pago semanal registrado en el día, con el mensaje `pago_recibido` ya formateado para confirmación.
+5. **Historial completo** (paginado) con dos tabs:
    - ✉️ **Enviadas** — `GET /notifications/all?page=&size=` con paginación visual (← → + selector 10/20/50/100).
    - ⚠️ **Errores** — `GET /notifications/errors/all?page=&size=` con columna extra del `errorMessage`.
-5. **Historial por contrato** — busca notificaciones por `numContract` usando `GET /get/notifications?id=` con validación cliente de dígitos.
-6. **Configuración avanzada** (colapsada por defecto) — para apuntar a un backend distinto sin tocar código, con botón *↺ Restablecer* que vuelve a la URL de producción.
+6. **Historial por contrato** — busca notificaciones por `numContract` usando `GET /get/notifications?id=` con validación cliente de dígitos.
+7. **Configuración avanzada** (colapsada por defecto) — para apuntar a un backend distinto sin tocar código, con botón *↺ Restablecer* que vuelve a la URL de producción.
 
 ## Ejecución local
 
@@ -94,6 +95,7 @@ Si el backend está en sleep (plan free de Render/Azure) y responde lento, verá
 |--------|---------------------------------------------|--------------------------------|
 | GET    | `/actuator/health`                          | Indicador del header (público) |
 | GET    | `/contracts/next-to-pay`                    | Sección "Contratos próximos"   |
+| GET    | `/contracts/paid-today`                     | Sección "Pagos registrados hoy"|
 | GET    | `/notifications/all?page=&size=`            | Tab "Enviadas"                 |
 | GET    | `/notifications/errors/all?page=&size=`     | Tab "Errores"                  |
 | GET    | `/get/notifications?id=`                    | Búsqueda por contrato          |
