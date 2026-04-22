@@ -167,6 +167,43 @@
       </div>
     </section>
 
+    <!-- Pagos registrados hoy -->
+    <section class="bg-white shadow rounded-lg p-5">
+      <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
+        <div>
+          <h2 class="text-xl font-semibold">Pagos registrados hoy</h2>
+          <p class="text-sm text-gray-500">
+            Resultado de <code class="text-xs bg-gray-100 px-1 rounded">GET /contracts/paid-today</code>.
+            Clientes cuyo pago llegó hoy, con el mensaje de confirmación (<em>pago_recibido</em>).
+          </p>
+        </div>
+        <button
+          id="refreshPaidToday"
+          class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
+        >
+          ↻ Actualizar
+        </button>
+      </div>
+
+      <div id="paidTodayState" class="text-sm text-gray-500 mb-3">
+        Sin datos. Presiona <em>Actualizar</em>.
+      </div>
+      <div class="overflow-x-auto border rounded">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+            <tr>
+              <th class="px-3 py-2">Contrato</th>
+              <th class="px-3 py-2">Cliente</th>
+              <th class="px-3 py-2">Teléfono</th>
+              <th class="px-3 py-2 text-right">Pago recibido</th>
+              <th class="px-3 py-2 min-w-64">Mensaje generado</th>
+            </tr>
+          </thead>
+          <tbody id="paidTodayBody"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Historial completo -->
     <section class="bg-white shadow rounded-lg p-5">
       <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
