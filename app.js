@@ -46,6 +46,15 @@ const historyState = {
   totalElements: 0,
 };
 
+const contractsState = {
+  raw: [],            // último response sin filtrar
+  filter: "all",      // "all" | "mora" | "reminder"
+};
+
+const paidTodayState = {
+  raw: [],
+};
+
 const money = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
@@ -165,6 +174,13 @@ function init() {
   els.checkHealth.addEventListener("click", checkHealth);
   els.refreshContracts.addEventListener("click", fetchContracts);
   els.refreshPaidToday.addEventListener("click", fetchPaidToday);
+
+  document.querySelectorAll(".contracts-filter").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      contractsState.filter = btn.dataset.filter;
+      applyContractsFilter();
+    });
+  });
   els.searchNotifications.addEventListener("click", () => {
     const id = els.contractId.value.trim();
     if (id) fetchNotifications(id);
@@ -225,6 +241,9 @@ function init() {
   // Logout
   els.logoutBtn.addEventListener("click", () => {
     clearApiKey();
+    contractsState.raw = [];
+    contractsState.filter = "all";
+    paidTodayState.raw = [];
     // Limpiar tablas
     els.contractsBody.innerHTML = "";
     els.paidTodayBody.innerHTML = "";
@@ -234,6 +253,7 @@ function init() {
     els.paidTodayState.textContent = "Sesión cerrada.";
     els.historyStateLabel.textContent = "";
     els.historyPageInfo.textContent = "";
+    updateKpis();
     setHeaderStatus("loading", "Sin sesión");
     showLogin();
   });
@@ -259,8 +279,8 @@ function init() {
 function updateTabUI() {
   els.historyTabs.forEach((btn) => {
     const active = btn.dataset.tab === historyState.tab;
-    btn.classList.toggle("border-emerald-600", active);
-    btn.classList.toggle("text-emerald-700", active);
+    btn.classList.toggle("border-sky-700", active);
+    btn.classList.toggle("text-sky-800", active);
     btn.classList.toggle("border-transparent", !active);
     btn.classList.toggle("text-gray-500", !active);
   });
@@ -305,13 +325,85 @@ async function fetchContracts() {
     const res = await apiFetch("/contracts/next-to-pay");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    renderContracts(Array.isArray(data) ? data : []);
-    els.contractsState.textContent = `${data.length} contrato(s) · Actualizado ${new Date().toLocaleTimeString()}`;
+    contractsState.raw = Array.isArray(data) ? data : [];
+    applyContractsFilter();
   } catch (err) {
     if (err.message !== "Unauthorized") {
       els.contractsState.textContent = `Error al cargar contratos: ${err.message}`;
     }
   }
+}
+
+function applyContractsFilter() {
+  const all = contractsState.raw;
+  const moraCount = all.filter((c) => Number(c.debt ?? 0) > 0).length;
+  const reminderCount = all.length - moraCount;
+
+  document.querySelectorAll(".contracts-filter").forEach((btn) => {
+    const f = btn.dataset.filter;
+    const count = f === "all" ? all.length : f === "mora" ? moraCount : reminderCount;
+    const countEl = btn.querySelector(".filter-count");
+    if (countEl) countEl.textContent = count;
+    const active = f === contractsState.filter;
+    btn.classList.toggle("bg-slate-900", active);
+    btn.classList.toggle("text-white", active);
+    btn.classList.toggle("hover:bg-slate-800", active);
+    btn.classList.toggle("bg-slate-100", !active);
+    btn.classList.toggle("text-slate-700", !active);
+    btn.classList.toggle("hover:bg-slate-200", !active);
+  });
+
+  const filtered =
+    contractsState.filter === "mora"
+      ? all.filter((c) => Number(c.debt ?? 0) > 0)
+      : contractsState.filter === "reminder"
+      ? all.filter((c) => Number(c.debt ?? 0) === 0)
+      : all;
+
+  renderContracts(filtered);
+
+  const stamp = new Date().toLocaleTimeString();
+  const label =
+    contractsState.filter === "all"
+      ? `${all.length} contrato(s)`
+      : `${filtered.length} de ${all.length} contrato(s) (${contractsState.filter === "mora" ? "mora" : "recordatorio"})`;
+  els.contractsState.textContent = `${label} · Actualizado ${stamp}`;
+
+  updateKpis();
+}
+
+function updateKpis() {
+  const contracts = contractsState.raw;
+  const total = contracts.length;
+  const moraCount = contracts.filter((c) => Number(c.debt ?? 0) > 0).length;
+  const reminderCount = total - moraCount;
+  const cartera = contracts.reduce((sum, c) => sum + Number(c.accumulatedDebt ?? 0), 0);
+  const moraAmount = contracts.reduce((sum, c) => sum + Number(c.debt ?? 0), 0);
+
+  const paid = paidTodayState.raw;
+  const paidCount = paid.length;
+  const paidAmount = paid.reduce((sum, p) => sum + Number(p.paymentPayout ?? 0), 0);
+
+  const kpiTotal = document.getElementById("kpiTotal");
+  const kpiTotalSub = document.getElementById("kpiTotalSub");
+  const kpiMora = document.getElementById("kpiMora");
+  const kpiMoraSub = document.getElementById("kpiMoraSub");
+  const kpiCartera = document.getElementById("kpiCartera");
+  const kpiCarteraSub = document.getElementById("kpiCarteraSub");
+  const kpiPaid = document.getElementById("kpiPaid");
+  const kpiPaidSub = document.getElementById("kpiPaidSub");
+
+  if (kpiTotal) kpiTotal.textContent = total.toLocaleString("es-CO");
+  if (kpiTotalSub) kpiTotalSub.textContent = `${moraCount} mora · ${reminderCount} recordatorio`;
+
+  if (kpiMora) kpiMora.textContent = money.format(moraAmount);
+  if (kpiMoraSub) kpiMoraSub.textContent = `${moraCount} contrato(s) con deuda previa`;
+
+  if (kpiCartera) kpiCartera.textContent = money.format(cartera);
+  if (kpiCarteraSub) kpiCarteraSub.textContent = `${total} contrato(s) con deuda`;
+
+  if (kpiPaid) kpiPaid.textContent = money.format(paidAmount);
+  if (kpiPaidSub) kpiPaidSub.textContent = paidCount === 0 ? "Aún no hay pagos esta semana" : `${paidCount} pago(s) esta semana`;
 }
 
 function renderContracts(contracts) {
@@ -353,11 +445,13 @@ async function fetchPaidToday() {
   els.paidTodayState.textContent = "Cargando...";
   els.paidTodayBody.innerHTML = "";
   try {
-    const res = await apiFetch("/contracts/paid-today");
+    const res = await apiFetch("/contracts/paid-this-week");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    renderPaidToday(Array.isArray(data) ? data : []);
-    els.paidTodayState.textContent = `${data.length} pago(s) registrado(s) hoy · Actualizado ${new Date().toLocaleTimeString()}`;
+    paidTodayState.raw = Array.isArray(data) ? data : [];
+    renderPaidToday(paidTodayState.raw);
+    els.paidTodayState.textContent = `${paidTodayState.raw.length} pago(s) esta semana · Actualizado ${new Date().toLocaleTimeString()}`;
+    updateKpis();
   } catch (err) {
     if (err.message !== "Unauthorized") {
       els.paidTodayState.textContent = `Error al cargar pagos: ${err.message}`;
@@ -368,14 +462,16 @@ async function fetchPaidToday() {
 function renderPaidToday(payments) {
   if (payments.length === 0) {
     els.paidTodayBody.innerHTML =
-      '<tr><td colspan="5" class="text-center py-6 text-gray-500">Aún no se han registrado pagos el día de hoy.</td></tr>';
+      '<tr><td colspan="6" class="text-center py-6 text-gray-500">Aún no hay pagos registrados en esta semana.</td></tr>';
     return;
   }
   els.paidTodayBody.innerHTML = payments
     .map((p) => {
       const abono = p.paymentPayout == null ? 0 : Number(p.paymentPayout);
+      const fechaPago = p.paymentDay || "—";
       return `
         <tr class="border-b hover:bg-gray-50">
+          <td class="px-3 py-2 whitespace-nowrap">${escapeHtml(fechaPago)}</td>
           <td class="px-3 py-2 font-mono text-xs">${escapeHtml(p.id)}</td>
           <td class="px-3 py-2">${escapeHtml(p.nameClient)}</td>
           <td class="px-3 py-2 font-mono text-xs">${escapeHtml(p.phoneNumber)}</td>
