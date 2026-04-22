@@ -326,10 +326,10 @@ function renderContracts(contracts) {
       const cuota = Number(c.paymentContract ?? 0);
       const abono = c.paymentPayout == null ? null : Number(c.paymentPayout);
       const saldo = abono == null ? cuota : cuota - abono;
-      const isPartial = abono != null;
-      const caseLabel = isPartial ? "D · Abono parcial" : "C · Sin abono";
-      const caseClass = isPartial
-        ? "bg-amber-100 text-amber-800 border border-amber-200"
+      const hasDebt = Number(c.debt ?? 0) > 0;
+      const caseLabel = hasDebt ? "Mora · Cuota vencida" : "Recordatorio · Sin abono";
+      const caseClass = hasDebt
+        ? "bg-red-100 text-red-800 border border-red-200"
         : "bg-blue-100 text-blue-800 border border-blue-200";
       const stateWeek = c.StateWeek ?? c.stateWeek ?? "";
       return `
