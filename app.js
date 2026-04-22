@@ -15,6 +15,9 @@ const els = {
   refreshContracts: document.getElementById("refreshContracts"),
   contractsState: document.getElementById("contractsState"),
   contractsBody: document.getElementById("contractsBody"),
+  refreshPaidToday: document.getElementById("refreshPaidToday"),
+  paidTodayState: document.getElementById("paidTodayState"),
+  paidTodayBody: document.getElementById("paidTodayBody"),
   contractId: document.getElementById("contractId"),
   searchNotifications: document.getElementById("searchNotifications"),
   notificationsState: document.getElementById("notificationsState"),
@@ -145,6 +148,7 @@ function init() {
     els.backendStatus.textContent = `Backend activo: ${url}`;
     checkHealth();
     fetchContracts();
+    fetchPaidToday();
     fetchHistory();
   });
 
@@ -154,11 +158,13 @@ function init() {
     els.backendStatus.textContent = `Backend activo: ${DEFAULT_URL} (por defecto)`;
     checkHealth();
     fetchContracts();
+    fetchPaidToday();
     fetchHistory();
   });
 
   els.checkHealth.addEventListener("click", checkHealth);
   els.refreshContracts.addEventListener("click", fetchContracts);
+  els.refreshPaidToday.addEventListener("click", fetchPaidToday);
   els.searchNotifications.addEventListener("click", () => {
     const id = els.contractId.value.trim();
     if (id) fetchNotifications(id);
@@ -212,6 +218,7 @@ function init() {
     hideLogin();
     checkHealth();
     fetchContracts();
+    fetchPaidToday();
     fetchHistory();
   });
 
@@ -220,9 +227,11 @@ function init() {
     clearApiKey();
     // Limpiar tablas
     els.contractsBody.innerHTML = "";
+    els.paidTodayBody.innerHTML = "";
     els.historyBody.innerHTML = "";
     els.notificationsBody.innerHTML = "";
     els.contractsState.textContent = "Sesión cerrada.";
+    els.paidTodayState.textContent = "Sesión cerrada.";
     els.historyStateLabel.textContent = "";
     els.historyPageInfo.textContent = "";
     setHeaderStatus("loading", "Sin sesión");
@@ -243,6 +252,7 @@ function init() {
   // Carga inicial automatica
   checkHealth();
   fetchContracts();
+  fetchPaidToday();
   fetchHistory();
 }
 
@@ -333,6 +343,45 @@ function renderContracts(contracts) {
           <td class="px-3 py-2 text-right font-semibold">${money.format(saldo * 1000)}</td>
           <td class="px-3 py-2"><span class="inline-block px-2 py-1 rounded text-xs ${caseClass}">${caseLabel}</span><div class="text-xs text-gray-400 mt-1">${escapeHtml(stateWeek)}</div></td>
           <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(c.message)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+async function fetchPaidToday() {
+  if (!getApiKey()) return;
+  els.paidTodayState.textContent = "Cargando...";
+  els.paidTodayBody.innerHTML = "";
+  try {
+    const res = await apiFetch("/contracts/paid-today");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderPaidToday(Array.isArray(data) ? data : []);
+    els.paidTodayState.textContent = `${data.length} pago(s) registrado(s) hoy · Actualizado ${new Date().toLocaleTimeString()}`;
+  } catch (err) {
+    if (err.message !== "Unauthorized") {
+      els.paidTodayState.textContent = `Error al cargar pagos: ${err.message}`;
+    }
+  }
+}
+
+function renderPaidToday(payments) {
+  if (payments.length === 0) {
+    els.paidTodayBody.innerHTML =
+      '<tr><td colspan="5" class="text-center py-6 text-gray-500">Aún no se han registrado pagos el día de hoy.</td></tr>';
+    return;
+  }
+  els.paidTodayBody.innerHTML = payments
+    .map((p) => {
+      const abono = p.paymentPayout == null ? 0 : Number(p.paymentPayout);
+      return `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-3 py-2 font-mono text-xs">${escapeHtml(p.id)}</td>
+          <td class="px-3 py-2">${escapeHtml(p.nameClient)}</td>
+          <td class="px-3 py-2 font-mono text-xs">${escapeHtml(p.phoneNumber)}</td>
+          <td class="px-3 py-2 text-right font-semibold">${money.format(abono)}</td>
+          <td class="px-3 py-2 text-sm text-gray-700 whitespace-pre-line">${escapeHtml(p.message)}</td>
         </tr>
       `;
     })
