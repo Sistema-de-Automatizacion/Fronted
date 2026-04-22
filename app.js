@@ -55,6 +55,10 @@ const paidTodayState = {
   raw: [],
 };
 
+// Umbral (COP): si el cliente ya pagó la cuota semanal y su deuda residual
+// es menor a este monto, no lo incluimos en la lista de notificaciones.
+const DEBT_NOTIFICATION_THRESHOLD = 100000;
+
 const money = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
@@ -334,8 +338,34 @@ async function fetchContracts() {
   }
 }
 
+function buildPaidMap() {
+  const map = new Map();
+  for (const p of paidTodayState.raw) {
+    const prev = map.get(p.id) || 0;
+    map.set(p.id, prev + Number(p.paymentPayout ?? 0));
+  }
+  return map;
+}
+
+// Aplica las reglas de dedup: un contrato NO se notifica si
+//   1) ya pagó toda la deuda esta semana (realDebt <= 0), o
+//   2) pagó al menos la cuota semanal y la mora residual < umbral (100k COP).
+function getEffectiveContracts() {
+  const paidMap = buildPaidMap();
+  return contractsState.raw.filter((c) => {
+    const paid = paidMap.get(c.id) || 0;
+    if (paid === 0) return true;
+    const cuota = Number(c.paymentContract ?? 0);
+    const accumDebt = Number(c.accumulatedDebt ?? 0);
+    const realDebt = accumDebt - paid;
+    if (realDebt <= 0) return false;
+    if (paid >= cuota && realDebt < DEBT_NOTIFICATION_THRESHOLD) return false;
+    return true;
+  });
+}
+
 function applyContractsFilter() {
-  const all = contractsState.raw;
+  const all = getEffectiveContracts();
   const moraCount = all.filter((c) => Number(c.debt ?? 0) > 0).length;
   const reminderCount = all.length - moraCount;
 
@@ -373,7 +403,7 @@ function applyContractsFilter() {
 }
 
 function updateKpis() {
-  const contracts = contractsState.raw;
+  const contracts = getEffectiveContracts();
   const total = contracts.length;
   const moraCount = contracts.filter((c) => Number(c.debt ?? 0) > 0).length;
   const reminderCount = total - moraCount;
@@ -451,7 +481,8 @@ async function fetchPaidToday() {
     paidTodayState.raw = Array.isArray(data) ? data : [];
     renderPaidToday(paidTodayState.raw);
     els.paidTodayState.textContent = `${paidTodayState.raw.length} pago(s) esta semana · Actualizado ${new Date().toLocaleTimeString()}`;
-    updateKpis();
+    // Re-aplicar filtro para que la dedup y los KPIs reflejen los pagos recién cargados.
+    applyContractsFilter();
   } catch (err) {
     if (err.message !== "Unauthorized") {
       els.paidTodayState.textContent = `Error al cargar pagos: ${err.message}`;
