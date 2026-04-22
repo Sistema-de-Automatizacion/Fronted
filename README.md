@@ -33,30 +33,30 @@ Stack: HTML + Tailwind CSS (CDN) + JavaScript vanilla. **Sin build, sin bundler,
 6. **Historial por contrato** — busca notificaciones por `numContract` usando `GET /get/notifications?id=` con validación cliente de dígitos.
 7. **Configuración avanzada** (colapsada por defecto) — para apuntar a un backend distinto sin tocar código, con botón *↺ Restablecer* que vuelve a la URL de producción.
 
-## Ejecución local
+## Setup local (onboarding)
 
-### 1) Servir los archivos estáticos
+Si recién clonaste el repo y querés levantar el dashboard apuntando a un backend local:
 
 ```bash
-# Python 3
-cd C:\Users\LeNoVo\Backend-frontend
-python -m http.server 5500
+git clone https://github.com/Sistema-de-Automatizacion/Fronted.git
+cd Fronted
+# Python 3 (usa py en Windows si python no está en PATH)
+python -m http.server 5173
 ```
 
-Abrir http://localhost:5500.
+Abrir http://localhost:5173 en el navegador.
 
-### 2) Backend local
+Pasos en el navegador:
 
-Necesitas el backend corriendo en `http://localhost:8080` con:
+1. Aparece el **modal de login** → pega la misma `app.api-key` que configuraste en el `.env` del backend local (por default el `.env.example` propone `local-dev-key-1234`).
+2. Entrás al dashboard. El header arriba a la derecha debería mostrar 🟢 **Backend OK · localhost:8080** (si el backend está corriendo).
+3. **Primera vez contra un backend local:** expandí **⚙️ Configuración avanzada del backend**, cambiá la URL a `http://localhost:8080` y **Guardar**. La URL queda guardada en `localStorage`, así que la próxima vez ya arranca apuntando al local.
 
-- La variable `app.cors.allowed-origins=http://localhost:5500` configurada (ver [README del backend](https://github.com/Sistema-de-Automatizacion/Backend)).
-- La variable `app.api-key=<token-local>` con una key de pruebas.
+### Backend local corriendo
 
-### 3) Primera visita local
+Necesitás el backend en `http://localhost:8080`. Ver el [README del backend](https://github.com/Sistema-de-Automatizacion/Backend) — el setup es `cp .env.example .env`, completar credenciales y `./mvnw spring-boot:run`.
 
-1. Abre http://localhost:5500.
-2. Aparece el modal de login → pega la misma `app.api-key` que configuraste en el backend.
-3. Si quieres apuntar a un backend distinto del Azure de producción, expande **⚙️ Configuración avanzada del backend** y pon la URL local.
+Default del `.env.example` del backend: `app.api-key=local-dev-key-1234`. Esa es la key que pegás en el modal de login del dashboard. CORS no necesita configuración extra para local (default `*` permite todo).
 
 ## Despliegue en Render (Static Site)
 
