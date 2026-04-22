@@ -338,9 +338,9 @@ function renderContracts(contracts) {
           <td class="px-3 py-2">${escapeHtml(c.nameClient)}</td>
           <td class="px-3 py-2 font-mono text-xs">${escapeHtml(c.phoneNumber)}</td>
           <td class="px-3 py-2">${escapeHtml(c.paymentDay)}</td>
-          <td class="px-3 py-2 text-right">${money.format(cuota * 1000)}</td>
-          <td class="px-3 py-2 text-right">${abono == null ? '<span class="text-gray-400">—</span>' : money.format(abono * 1000)}</td>
-          <td class="px-3 py-2 text-right font-semibold">${money.format(saldo * 1000)}</td>
+          <td class="px-3 py-2 text-right">${money.format(cuota)}</td>
+          <td class="px-3 py-2 text-right">${abono == null ? '<span class="text-gray-400">—</span>' : money.format(abono)}</td>
+          <td class="px-3 py-2 text-right font-semibold">${money.format(saldo)}</td>
           <td class="px-3 py-2"><span class="inline-block px-2 py-1 rounded text-xs ${caseClass}">${caseLabel}</span><div class="text-xs text-gray-400 mt-1">${escapeHtml(stateWeek)}</div></td>
           <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(c.message)}</td>
         </tr>
