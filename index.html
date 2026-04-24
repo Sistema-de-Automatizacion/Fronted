@@ -49,39 +49,58 @@
   </header>
 
   <!-- Modal de login (API key) -->
-  <div id="loginOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-      <div class="flex items-center gap-2 mb-4">
-        <span class="text-2xl">🔐</span>
-        <h2 class="text-xl font-bold">Acceso restringido</h2>
+  <div id="loginOverlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4 overflow-hidden">
+    <div class="login-gradient absolute inset-0" aria-hidden="true"></div>
+    <div class="login-grid-pattern absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+
+    <div class="login-speed-lines absolute inset-0 pointer-events-none" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+
+    <div class="login-particles absolute inset-0 pointer-events-none" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="relative z-10 flex flex-col items-center w-full max-w-md">
+      <div class="login-float text-6xl sm:text-7xl mb-4" aria-hidden="true">🏍️</div>
+
+      <h1 class="login-fade-in text-4xl sm:text-5xl font-bold text-white text-center tracking-tight">
+        Motos del Caribe
+      </h1>
+      <p class="login-fade-in login-delay-1 text-base sm:text-lg bg-gradient-to-r from-sky-300 via-cyan-300 to-sky-300 bg-clip-text text-transparent text-center mt-2 font-semibold">
+        Panel de notificaciones
+      </p>
+      <p class="login-fade-in login-delay-2 text-sm text-slate-300 text-center mt-3 max-w-sm px-2">
+        Ingresa tu API Key para acceder al panel operativo de cobranza.
+      </p>
+
+      <div class="login-fade-in login-delay-3 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full p-6 mt-8 border border-white/20">
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label for="apiKeyInput" class="block text-sm font-semibold mb-1 text-slate-700">🔐 API Key</label>
+            <input
+              id="apiKeyInput"
+              type="password"
+              autocomplete="off"
+              required
+              class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
+              placeholder="Pega tu API key aquí"
+            />
+          </div>
+          <p id="loginError" class="text-sm text-red-600 hidden"></p>
+          <button
+            type="submit"
+            class="login-cta w-full bg-gradient-to-r from-sky-700 to-sky-800 text-white py-2.5 rounded-lg font-semibold hover:from-sky-800 hover:to-sky-900 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          >
+            Ingresar →
+          </button>
+        </form>
+        <p class="text-xs text-slate-400 mt-4 text-center">
+          🔒 La clave se guarda solo en tu navegador.
+        </p>
       </div>
-      <p class="text-sm text-gray-600 mb-4">
-        Este panel requiere una <strong>API Key</strong> para consultar el backend.
-        Pídesela al administrador del sistema.
-      </p>
-      <form id="loginForm" class="space-y-3">
-        <div>
-          <label for="apiKeyInput" class="block text-sm font-semibold mb-1">API Key</label>
-          <input
-            id="apiKeyInput"
-            type="password"
-            autocomplete="off"
-            required
-            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-600"
-            placeholder="Pega tu API key aquí"
-          />
-        </div>
-        <p id="loginError" class="text-sm text-red-600 hidden"></p>
-        <button
-          type="submit"
-          class="w-full bg-sky-700 text-white py-2 rounded font-semibold hover:bg-sky-800 transition"
-        >
-          Ingresar
-        </button>
-      </form>
-      <p class="text-xs text-gray-400 mt-4 text-center">
-        La clave se guarda solo en tu navegador.
-      </p>
     </div>
   </div>
 
