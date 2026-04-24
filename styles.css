@@ -29,3 +29,155 @@ code {
   font-family: "IBM Plex Mono", "Consolas", "Menlo", "Monaco", monospace;
   font-size: 0.85em;
 }
+
+/* ---------- Login hero ---------- */
+
+.login-gradient {
+  background: linear-gradient(135deg,
+    #020617 0%,   /* slate-950 */
+    #0f172a 25%,  /* slate-900 */
+    #0c4a6e 55%,  /* sky-900  */
+    #164e63 80%,  /* cyan-900 */
+    #0f172a 100%);
+  background-size: 200% 200%;
+  animation: loginGradientShift 18s ease-in-out infinite;
+}
+
+@keyframes loginGradientShift {
+  0%   { background-position:   0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position:   0% 50%; }
+}
+
+/* Patrón sutil para romper el plano */
+.login-grid-pattern {
+  background-image:
+    radial-gradient(circle at 25% 20%, rgba(56, 189, 248, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 75% 80%, rgba(34, 211, 238, 0.12) 0%, transparent 40%);
+}
+
+.login-float {
+  display: inline-block;
+  animation: loginMotorcycleRide 4.2s ease-in-out infinite;
+  filter: drop-shadow(0 14px 26px rgba(14, 165, 233, 0.6))
+          drop-shadow(-14px 0 18px rgba(34, 211, 238, 0.35));
+  transform-origin: 60% 80%;
+}
+
+@keyframes loginMotorcycleRide {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20%      { transform: translateY(-8px) rotate(-5deg); }
+  45%      { transform: translateY(-14px) rotate(-3deg); }
+  70%      { transform: translateY(-6px) rotate(2deg); }
+  88%      { transform: translateY(-2px) rotate(0deg); }
+}
+
+/* Speed lines: pequeñas trazas horizontales que cruzan la pantalla
+   de derecha a izquierda simulando velocidad. */
+.login-speed-lines span {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(56, 189, 248, 0.85),
+    rgba(165, 243, 252, 0.95),
+    transparent);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.55);
+  animation: loginSpeedLine linear infinite;
+  will-change: transform;
+}
+.login-speed-lines span:nth-child(1) { top: 12%; width: 180px; animation-duration: 2.2s; animation-delay: 0.0s; }
+.login-speed-lines span:nth-child(2) { top: 28%; width: 120px; animation-duration: 2.8s; animation-delay: 0.6s; }
+.login-speed-lines span:nth-child(3) { top: 42%; width: 200px; animation-duration: 2.0s; animation-delay: 1.0s; }
+.login-speed-lines span:nth-child(4) { top: 58%; width: 90px;  animation-duration: 2.6s; animation-delay: 1.6s; }
+.login-speed-lines span:nth-child(5) { top: 72%; width: 160px; animation-duration: 2.3s; animation-delay: 0.3s; }
+.login-speed-lines span:nth-child(6) { top: 85%; width: 110px; animation-duration: 2.7s; animation-delay: 1.3s; }
+.login-speed-lines span:nth-child(7) { top: 22%; width: 80px;  animation-duration: 1.9s; animation-delay: 1.8s; }
+
+@keyframes loginSpeedLine {
+  from { transform: translateX(105vw); }
+  to   { transform: translateX(-220px); }
+}
+
+/* Partículas tipo luciérnagas que flotan hacia arriba. */
+.login-particles span {
+  position: absolute;
+  bottom: -12px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(125, 211, 252, 0.9);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.9),
+              0 0 20px rgba(14, 165, 233, 0.5);
+  animation: loginParticleRise linear infinite;
+  will-change: transform, opacity;
+}
+.login-particles span:nth-child(1) { left:  8%; animation-duration: 9s;  animation-delay: 0.0s; }
+.login-particles span:nth-child(2) { left: 22%; animation-duration: 11s; animation-delay: 1.5s; }
+.login-particles span:nth-child(3) { left: 37%; animation-duration: 8s;  animation-delay: 3.2s; }
+.login-particles span:nth-child(4) { left: 55%; animation-duration: 12s; animation-delay: 0.8s; }
+.login-particles span:nth-child(5) { left: 68%; animation-duration: 9.5s; animation-delay: 4.5s; }
+.login-particles span:nth-child(6) { left: 82%; animation-duration: 10s; animation-delay: 2.0s; }
+.login-particles span:nth-child(7) { left: 45%; animation-duration: 11.5s; animation-delay: 6.0s; }
+.login-particles span:nth-child(8) { left: 92%; animation-duration: 8.5s; animation-delay: 5.5s; }
+
+@keyframes loginParticleRise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.9; }
+  90%  { opacity: 0.7; }
+  100% { transform: translateY(-110vh) translateX(40px); opacity: 0; }
+}
+
+.login-fade-in {
+  opacity: 0;
+  animation: loginFadeSlide 0.7s ease-out forwards;
+}
+.login-delay-1 { animation-delay: 0.15s; }
+.login-delay-2 { animation-delay: 0.30s; }
+.login-delay-3 { animation-delay: 0.45s; }
+
+@keyframes loginFadeSlide {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* CTA con efecto shine al pasar el mouse */
+.login-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.login-cta::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-22deg);
+  pointer-events: none;
+}
+.login-cta:hover::after {
+  animation: loginShine 0.9s ease;
+}
+
+@keyframes loginShine {
+  0%   { left: -80%; }
+  100% { left: 130%; }
+}
+
+/* Respetar quien desactivó las animaciones */
+@media (prefers-reduced-motion: reduce) {
+  .login-gradient,
+  .login-float,
+  .login-fade-in,
+  .login-cta::after,
+  .login-speed-lines span,
+  .login-particles span {
+    animation: none;
+  }
+  .login-fade-in { opacity: 1; }
+  .login-speed-lines,
+  .login-particles { display: none; }
+}
