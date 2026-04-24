@@ -1,0 +1,15 @@
+{
+  "name": "motos-del-caribe-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Panel operativo de notificaciones de Motos del Caribe.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "vitest": "^3.2.4"
+  }
+}
