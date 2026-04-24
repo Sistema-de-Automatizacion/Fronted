@@ -57,7 +57,7 @@ const paidTodayState = {
 
 // Umbral (COP): si el cliente ya pagó la cuota semanal y su deuda residual
 // es menor a este monto, no lo incluimos en la lista de notificaciones.
-const DEBT_NOTIFICATION_THRESHOLD = 100000;
+export const DEBT_NOTIFICATION_THRESHOLD = 100000;
 
 const money = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -122,11 +122,11 @@ async function apiFetch(path, options = {}) {
   return res;
 }
 
-function sanitizeUrl(raw) {
+export function sanitizeUrl(raw) {
   return raw.trim().replace(/\/+$/, "");
 }
 
-function escapeHtml(value) {
+export function escapeHtml(value) {
   if (value == null) return "";
   return String(value)
     .replace(/&/g, "&amp;")
@@ -313,7 +313,7 @@ async function checkHealth() {
   }
 }
 
-function hostOf(url) {
+export function hostOf(url) {
   try {
     return new URL(url).host;
   } catch {
@@ -338,9 +338,9 @@ async function fetchContracts() {
   }
 }
 
-function buildPaidMap() {
+export function buildPaidMap(payments = paidTodayState.raw) {
   const map = new Map();
-  for (const p of paidTodayState.raw) {
+  for (const p of payments) {
     const prev = map.get(p.id) || 0;
     map.set(p.id, prev + Number(p.paymentPayout ?? 0));
   }
@@ -350,16 +350,19 @@ function buildPaidMap() {
 // Aplica las reglas de dedup: un contrato NO se notifica si
 //   1) ya pagó toda la deuda esta semana (realDebt <= 0), o
 //   2) pagó al menos la cuota semanal y la mora residual < umbral (100k COP).
-function getEffectiveContracts() {
-  const paidMap = buildPaidMap();
-  return contractsState.raw.filter((c) => {
+export function getEffectiveContracts(
+  contracts = contractsState.raw,
+  paidMap = buildPaidMap(),
+  threshold = DEBT_NOTIFICATION_THRESHOLD,
+) {
+  return contracts.filter((c) => {
     const paid = paidMap.get(c.id) || 0;
     if (paid === 0) return true;
     const cuota = Number(c.paymentContract ?? 0);
     const accumDebt = Number(c.accumulatedDebt ?? 0);
     const realDebt = accumDebt - paid;
     if (realDebt <= 0) return false;
-    if (paid >= cuota && realDebt < DEBT_NOTIFICATION_THRESHOLD) return false;
+    if (paid >= cuota && realDebt < threshold) return false;
     return true;
   });
 }
@@ -607,4 +610,8 @@ function renderNotifications(list) {
     .join("");
 }
 
-init();
+// Guard: sólo arrancar cuando estamos realmente en el dashboard.
+// Permite importar este módulo desde Vitest sin disparar init() contra un DOM vacío.
+if (typeof document !== "undefined" && document.getElementById("loginForm")) {
+  init();
+}
