@@ -3,6 +3,8 @@ import {
   buildPaidMap,
   getEffectiveContracts,
   DEBT_NOTIFICATION_THRESHOLD,
+  paginate,
+  CLIENT_PAGE_SIZE,
 } from "../app.js";
 
 // Helpers para armar payloads realistas sin repetir campos.
@@ -164,5 +166,72 @@ describe("getEffectiveContracts — combinaciones reales observadas", () => {
     const effective = getEffectiveContracts(contracts, paidMap);
     expect(effective).toHaveLength(1);
     expect(effective[0].id).toBe("sinPago");
+  });
+});
+
+describe("CLIENT_PAGE_SIZE", () => {
+  it("es 10 por defecto", () => {
+    expect(CLIENT_PAGE_SIZE).toBe(10);
+  });
+});
+
+describe("paginate", () => {
+  const mk = (n) => Array.from({ length: n }, (_, i) => ({ id: i + 1 }));
+
+  it("devuelve un slice vacío y total 0 cuando no hay items", () => {
+    const r = paginate([], 0);
+    expect(r.slice).toEqual([]);
+    expect(r.total).toBe(0);
+    expect(r.totalPages).toBe(0);
+    expect(r.from).toBe(0);
+    expect(r.to).toBe(0);
+    expect(r.page).toBe(0);
+  });
+
+  it("usa CLIENT_PAGE_SIZE (10) por defecto", () => {
+    const r = paginate(mk(25), 0);
+    expect(r.slice).toHaveLength(10);
+    expect(r.totalPages).toBe(3);
+    expect(r.from).toBe(1);
+    expect(r.to).toBe(10);
+  });
+
+  it("respeta el size personalizado", () => {
+    const r = paginate(mk(25), 0, 5);
+    expect(r.slice).toHaveLength(5);
+    expect(r.totalPages).toBe(5);
+  });
+
+  it("calcula from/to en una página intermedia", () => {
+    const r = paginate(mk(25), 1, 10); // página 2 (index 1)
+    expect(r.slice.map((x) => x.id)).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    expect(r.from).toBe(11);
+    expect(r.to).toBe(20);
+    expect(r.page).toBe(1);
+  });
+
+  it("la última página devuelve solo los items restantes", () => {
+    const r = paginate(mk(25), 2, 10);
+    expect(r.slice).toHaveLength(5);
+    expect(r.from).toBe(21);
+    expect(r.to).toBe(25);
+  });
+
+  it("limita una página fuera de rango (alta) a la última válida", () => {
+    const r = paginate(mk(25), 99, 10);
+    expect(r.page).toBe(2);
+    expect(r.slice).toHaveLength(5);
+  });
+
+  it("limita una página negativa a 0", () => {
+    const r = paginate(mk(25), -3, 10);
+    expect(r.page).toBe(0);
+    expect(r.from).toBe(1);
+  });
+
+  it("redondea hacia arriba el total de páginas (904 / 10 = 91)", () => {
+    const r = paginate(mk(904), 0);
+    expect(r.totalPages).toBe(91);
+    expect(r.slice).toHaveLength(10);
   });
 });
