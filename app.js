@@ -15,9 +15,15 @@ const els = {
   refreshContracts: document.getElementById("refreshContracts"),
   contractsState: document.getElementById("contractsState"),
   contractsBody: document.getElementById("contractsBody"),
+  contractsPrev: document.getElementById("contractsPrev"),
+  contractsNext: document.getElementById("contractsNext"),
+  contractsPageInfo: document.getElementById("contractsPageInfo"),
   refreshPaidToday: document.getElementById("refreshPaidToday"),
   paidTodayState: document.getElementById("paidTodayState"),
   paidTodayBody: document.getElementById("paidTodayBody"),
+  paidTodayPrev: document.getElementById("paidTodayPrev"),
+  paidTodayNext: document.getElementById("paidTodayNext"),
+  paidTodayPageInfo: document.getElementById("paidTodayPageInfo"),
   contractId: document.getElementById("contractId"),
   searchNotifications: document.getElementById("searchNotifications"),
   notificationsState: document.getElementById("notificationsState"),
@@ -49,15 +55,37 @@ const historyState = {
 const contractsState = {
   raw: [],            // último response sin filtrar
   filter: "all",      // "all" | "mora" | "reminder"
+  page: 0,
 };
 
 const paidTodayState = {
   raw: [],
+  page: 0,
 };
 
 // Umbral (COP): si el cliente ya pagó la cuota semanal y su deuda residual
 // es menor a este monto, no lo incluimos en la lista de notificaciones.
 export const DEBT_NOTIFICATION_THRESHOLD = 100000;
+
+// Tamaño de página para las tablas client-side (contratos y pagos semanales).
+export const CLIENT_PAGE_SIZE = 10;
+
+export function paginate(items, page, size = CLIENT_PAGE_SIZE) {
+  const total = items.length;
+  const safeSize = size > 0 ? size : 1;
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safeSize);
+  const safePage = totalPages === 0 ? 0 : Math.min(Math.max(0, page), totalPages - 1);
+  const from = total === 0 ? 0 : safePage * safeSize + 1;
+  const to = Math.min((safePage + 1) * safeSize, total);
+  return {
+    slice: items.slice(safePage * safeSize, safePage * safeSize + safeSize),
+    page: safePage,
+    totalPages,
+    total,
+    from,
+    to,
+  };
+}
 
 const money = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -182,8 +210,31 @@ function init() {
   document.querySelectorAll(".contracts-filter").forEach((btn) => {
     btn.addEventListener("click", () => {
       contractsState.filter = btn.dataset.filter;
+      contractsState.page = 0;
       applyContractsFilter();
     });
+  });
+
+  els.contractsPrev.addEventListener("click", () => {
+    if (contractsState.page > 0) {
+      contractsState.page -= 1;
+      applyContractsFilter();
+    }
+  });
+  els.contractsNext.addEventListener("click", () => {
+    contractsState.page += 1;
+    applyContractsFilter();
+  });
+
+  els.paidTodayPrev.addEventListener("click", () => {
+    if (paidTodayState.page > 0) {
+      paidTodayState.page -= 1;
+      renderPaidTodayPage();
+    }
+  });
+  els.paidTodayNext.addEventListener("click", () => {
+    paidTodayState.page += 1;
+    renderPaidTodayPage();
   });
   els.searchNotifications.addEventListener("click", () => {
     const id = els.contractId.value.trim();
@@ -247,7 +298,9 @@ function init() {
     clearApiKey();
     contractsState.raw = [];
     contractsState.filter = "all";
+    contractsState.page = 0;
     paidTodayState.raw = [];
+    paidTodayState.page = 0;
     // Limpiar tablas
     els.contractsBody.innerHTML = "";
     els.paidTodayBody.innerHTML = "";
@@ -257,6 +310,12 @@ function init() {
     els.paidTodayState.textContent = "Sesión cerrada.";
     els.historyStateLabel.textContent = "";
     els.historyPageInfo.textContent = "";
+    els.contractsPageInfo.textContent = "";
+    els.paidTodayPageInfo.textContent = "";
+    els.contractsPrev.disabled = true;
+    els.contractsNext.disabled = true;
+    els.paidTodayPrev.disabled = true;
+    els.paidTodayNext.disabled = true;
     updateKpis();
     setHeaderStatus("loading", "Sin sesión");
     showLogin();
@@ -330,6 +389,7 @@ async function fetchContracts() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     contractsState.raw = Array.isArray(data) ? data : [];
+    contractsState.page = 0;
     applyContractsFilter();
   } catch (err) {
     if (err.message !== "Unauthorized") {
@@ -393,7 +453,10 @@ function applyContractsFilter() {
       ? all.filter((c) => Number(c.debt ?? 0) === 0)
       : all;
 
-  renderContracts(filtered);
+  const pageData = paginate(filtered, contractsState.page);
+  contractsState.page = pageData.page;
+  renderContracts(pageData.slice);
+  updateContractsPagination(pageData);
 
   const stamp = new Date().toLocaleTimeString();
   const label =
@@ -403,6 +466,16 @@ function applyContractsFilter() {
   els.contractsState.textContent = `${label} · Actualizado ${stamp}`;
 
   updateKpis();
+}
+
+function updateContractsPagination(pageData) {
+  if (pageData.total === 0) {
+    els.contractsPageInfo.textContent = "";
+  } else {
+    els.contractsPageInfo.textContent = `Mostrando ${pageData.from}-${pageData.to} de ${pageData.total} · Página ${pageData.page + 1} de ${pageData.totalPages}`;
+  }
+  els.contractsPrev.disabled = pageData.page === 0;
+  els.contractsNext.disabled = pageData.page + 1 >= pageData.totalPages;
 }
 
 function updateKpis() {
@@ -482,7 +555,8 @@ async function fetchPaidToday() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     paidTodayState.raw = Array.isArray(data) ? data : [];
-    renderPaidToday(paidTodayState.raw);
+    paidTodayState.page = 0;
+    renderPaidTodayPage();
     els.paidTodayState.textContent = `${paidTodayState.raw.length} pago(s) esta semana · Actualizado ${new Date().toLocaleTimeString()}`;
     // Re-aplicar filtro para que la dedup y los KPIs reflejen los pagos recién cargados.
     applyContractsFilter();
@@ -491,6 +565,23 @@ async function fetchPaidToday() {
       els.paidTodayState.textContent = `Error al cargar pagos: ${err.message}`;
     }
   }
+}
+
+function renderPaidTodayPage() {
+  const pageData = paginate(paidTodayState.raw, paidTodayState.page);
+  paidTodayState.page = pageData.page;
+  renderPaidToday(pageData.slice);
+  updatePaidTodayPagination(pageData);
+}
+
+function updatePaidTodayPagination(pageData) {
+  if (pageData.total === 0) {
+    els.paidTodayPageInfo.textContent = "";
+  } else {
+    els.paidTodayPageInfo.textContent = `Mostrando ${pageData.from}-${pageData.to} de ${pageData.total} · Página ${pageData.page + 1} de ${pageData.totalPages}`;
+  }
+  els.paidTodayPrev.disabled = pageData.page === 0;
+  els.paidTodayNext.disabled = pageData.page + 1 >= pageData.totalPages;
 }
 
 function renderPaidToday(payments) {
